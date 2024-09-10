@@ -20,14 +20,12 @@ body {
 
 .highlight {
     background-color: rgba(152, 251, 152, 0.5);
-    position: absolute;
-    pointer-events: none;
-    z-index: 1;
+    display: inline;
 }
 
 .selection-icon {
     display: none;
-    position: fixed;
+    position: absolute;
     color: #007bff;
     cursor: pointer;
     font-size: 20px;
@@ -49,4 +47,29 @@ body {
 
 .selectable-text {
     position: relative;
+}
+
+.popover {
+    position: absolute;
+    z-index: 1060;
+    max-width: 276px;
+    font-family: var(--bs-font-sans-serif);
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    text-decoration: none;
+    text-shadow: none;
+    text-transform: none;
+    letter-spacing: normal;
+    word-break: normal;
+    word-spacing: normal;
+    white-space: normal;
+    line-break: auto;
+    font-size: 0.875rem;
+    word-wrap: break-word;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 0.3rem;
 }
