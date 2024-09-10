@@ -1,6 +1,8 @@
+// index.js
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles.scss";
-import "@fortawesome/fontawesome-svg-core/styles.css"; // Import Font Awesome CSS
+import "@fortawesome/fontawesome-svg-core/styles.css";
 
 import * as bootstrap from "bootstrap";
 
@@ -8,85 +10,114 @@ import { dom, library } from "@fortawesome/fontawesome-svg-core";
 
 import { faComment } from "@fortawesome/free-solid-svg-icons";
 
-// Add the comment icon to the library
 library.add(faComment);
-
-// Replace any existing <i> tags with <svg> and set up a MutationObserver to automatically replace any added to the page later
 dom.watch();
 
 const initializeTextSelection = async () => {
-    const sampleText = document.getElementById("sample-text");
     const selectionIcon = document.getElementById("selection-icon");
     let popover = null;
 
-    const handleSelection = () => {
-        const selection = window.getSelection();
-        const selectedText = selection.toString().trim();
+    const handleSelection = (event) => {
+        if (window.selectionTimeout) {
+            clearTimeout(window.selectionTimeout);
+        }
 
-        if (selectedText.length === 0) return;
+        window.selectionTimeout = setTimeout(() => {
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
 
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
+            if (selectedText.length === 0) return;
 
-        const isValidSelection =
-            sampleText.contains(range.commonAncestorContainer) ||
-            sampleText === range.commonAncestorContainer ||
-            range.intersectsNode(sampleText);
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
 
-        if (!isValidSelection) return;
+            const selectableElement = event.target.closest(".selectable-text");
+            if (!selectableElement) return;
 
-        const { left, width, bottom } = rect;
-        Object.assign(selectionIcon.style, {
-            display: "block",
-            left: `${left + width / 2 - 15}px`,
-            top: `${bottom + window.scrollY + 5}px`,
-        });
+            const { left, width, bottom } = rect;
+            Object.assign(selectionIcon.style, {
+                display: "block",
+                left: `${left + width / 2 - 15}px`,
+                top: `${bottom + window.scrollY + 5}px`,
+            });
 
-        popover?.dispose();
+            popover?.dispose();
 
-        popover = new bootstrap.Popover(selectionIcon, {
-            content: selectedText,
-            trigger: "click",
-            placement: "bottom",
-        });
+            popover = new bootstrap.Popover(selectionIcon, {
+                content: selectedText,
+                trigger: "click",
+                placement: "bottom",
+            });
 
-        if (selectedText !== sampleText.textContent.trim()) {
-            const span = document.createElement("span");
-            span.className = "highlight";
-            range.surroundContents(span);
+            removeHighlights(selectableElement);
+            applyHighlight(range, selectableElement);
+        }, 200);
+    };
+
+    const applyHighlight = (range, container) => {
+        const rects = range.getClientRects();
+        const containerRect = container.getBoundingClientRect();
+
+        for (let i = 0; i < rects.length; i++) {
+            const rect = rects[i];
+            const highlight = document.createElement("div");
+            highlight.className = "highlight";
+            highlight.style.position = "absolute";
+            highlight.style.left = `${rect.left - containerRect.left}px`;
+            highlight.style.top = `${rect.top - containerRect.top}px`;
+            highlight.style.width = `${rect.width}px`;
+            highlight.style.height = `${rect.height}px`;
+            highlight.style.pointerEvents = "none";
+            container.appendChild(highlight);
         }
     };
 
+    const removeHighlights = (element) => {
+        element
+            .querySelectorAll(".highlight")
+            .forEach((highlight) => highlight.remove());
+    };
+
     const handleClickOutside = ({ target }) => {
+        if (window.selectionTimeout) {
+            clearTimeout(window.selectionTimeout);
+        }
+
         if (target !== selectionIcon && !selectionIcon.contains(target)) {
             selectionIcon.style.display = "none";
             popover?.dispose();
             popover = null;
 
-            sampleText.querySelectorAll(".highlight").forEach((highlight) => {
-                const parent = highlight.parentNode;
-                while (highlight.firstChild) {
-                    parent.insertBefore(highlight.firstChild, highlight);
-                }
-                parent.removeChild(highlight);
-            });
+            document
+                .querySelectorAll(".selectable-text")
+                .forEach(removeHighlights);
         }
     };
 
     document.addEventListener("mouseup", handleSelection);
     document.addEventListener("mousedown", handleClickOutside);
 
-    // Cleanup function
+    window.addSelectableText = (element) => {
+        element.classList.add("selectable-text");
+        element.style.position = "relative";
+    };
+
+    window.removeSelectableText = (element) => {
+        element.classList.remove("selectable-text");
+        element.style.position = "";
+        removeHighlights(element);
+    };
+
+    document.querySelectorAll(".selectable-text").forEach(addSelectableText);
+
     return () => {
         document.removeEventListener("mouseup", handleSelection);
         document.removeEventListener("mousedown", handleClickOutside);
     };
 };
 
-// Use top-level await
 try {
     const cleanup = await initializeTextSelection();
-    // You can use the cleanup function if needed, e.g., when unmounting the component
 } catch (error) {
     console.error("Failed to initialize text selection:", error);
 }

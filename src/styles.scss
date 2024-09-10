@@ -1,3 +1,5 @@
+// styles.scss
+
 @import "~bootstrap/scss/bootstrap";
 
 body {
@@ -17,8 +19,10 @@ body {
 }
 
 .highlight {
-    background-color: #98fb98;
-    display: inline;
+    background-color: rgba(152, 251, 152, 0.5);
+    position: absolute;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .selection-icon {
@@ -41,4 +45,8 @@ body {
     i {
         vertical-align: middle;
     }
+}
+
+.selectable-text {
+    position: relative;
 }
